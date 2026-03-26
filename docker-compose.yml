@@ -1,0 +1,9 @@
+services:
+  marimo:
+    image: ghcr.io/marimo-team/marimo:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./notebooks:/home/user/notebooks
+    working_dir: /home/user/notebooks
+    command: ["marimo", "edit", "--host", "0.0.0.0", "--port", "8080", "--no-token"]
