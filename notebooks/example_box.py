@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.0"
+__generated_with = "0.21.1"
 app = marimo.App(width="medium")
 
 
@@ -9,7 +9,8 @@ def _():
     import marimo as mo
     import marimo_cad as cad
     from build123d import Box, Cylinder, fillet, Axis
-    return Box, Cylinder, Axis, fillet, cad, mo
+
+    return Axis, Box, cad, fillet, mo
 
 
 @app.cell
@@ -23,14 +24,19 @@ def _(mo):
 
 
 @app.cell
-def _(Box, Axis, fillet, cad, depth, height, radius, width):
+def _(Axis, Box, cad, depth, fillet, height, radius, width):
     box = Box(width.value, depth.value, height.value)
     if radius.value > 0:
         box = fillet(box.edges().filter_by(Axis.Z), radius.value)
     viewer = cad.Viewer()
     viewer.render(box)
     viewer
-    return box, viewer
+    return
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":
