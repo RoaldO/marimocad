@@ -1,10 +1,10 @@
 import marimo
 
 __generated_with = "0.21.1"
-app = marimo.App(width="medium")
+app = marimo.App(width="columns")
 
 
-@app.cell
+@app.cell(column=0, hide_code=True)
 def _():
     import marimo as mo
     import marimo_cad as cad
@@ -23,7 +23,7 @@ def _(mo):
     return depth, height, radius, width
 
 
-@app.cell
+@app.cell(column=1, hide_code=True)
 def _(Axis, Box, cad, depth, fillet, height, radius, width):
     box = Box(width.value, depth.value, height.value)
     if radius.value > 0:
@@ -31,11 +31,6 @@ def _(Axis, Box, cad, depth, fillet, height, radius, width):
     viewer = cad.Viewer()
     viewer.render(box)
     viewer
-    return
-
-
-@app.cell
-def _():
     return
 
 
