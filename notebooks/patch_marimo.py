@@ -1,15 +1,19 @@
 """
-Build-time patch: replaces marimo's new-notebook stub in os_file_system.py
-to load from /usr/local/share/marimocad/template.py instead of a blank app.
+Build-time patch: replaces marimo's new-notebook stubs in two files to load
+from /usr/local/share/marimocad/template.py instead of a blank app.
 Run once by the Dockerfile: RUN python3 /usr/local/share/marimocad/patch_marimo.py
 """
 import sys
 import sysconfig
 from pathlib import Path
 
-TARGET = Path(sysconfig.get_path("purelib")) / "marimo/_server/files/os_file_system.py"
+_SITE = Path(sysconfig.get_path("purelib"))
 
-OLD = '''\
+# ── Patch 1: file-browser "Add notebook" ──────────────────────────────────────
+
+TARGET_FS = _SITE / "marimo/_server/files/os_file_system.py"
+
+OLD_FS = '''\
         elif file_type == "notebook" and not contents:
             from marimo._convert.converters import MarimoConvert
 
@@ -25,7 +29,7 @@ OLD = '''\
             full_path.write_text(notebook_code, encoding="utf-8")
             contents = notebook_code.encode("utf-8")'''
 
-NEW = '''\
+NEW_FS = '''\
         elif file_type == "notebook" and not contents:
             full_path.parent.mkdir(parents=True, exist_ok=True)
             _template = Path("/usr/local/share/marimocad/template.py")
@@ -42,23 +46,79 @@ NEW = '''\
             full_path.write_text(notebook_code, encoding="utf-8")
             contents = notebook_code.encode("utf-8")'''
 
+# ── Patch 2: landing-page "Create a new notebook" ─────────────────────────────
 
-def main() -> None:
-    source = TARGET.read_text(encoding="utf-8")
-    if NEW in source:
-        print("Already patched; nothing to do.")
+TARGET_FM = _SITE / "marimo/_session/notebook/file_manager.py"
+
+OLD_FM = '''\
+        if app is None:
+            # Create new empty app with defaults
+            kwargs: dict[str, Any] = default.asdict()
+
+            # Add custom defaults if provided
+            if self._defaults.width is not None:
+                kwargs["width"] = self._defaults.width
+            if self._defaults.auto_download is not None:
+                kwargs["auto_download"] = self._defaults.auto_download
+            if self._defaults.sql_output is not None:
+                kwargs["sql_output"] = self._defaults.sql_output
+
+            empty_app = InternalApp(App(**kwargs))
+            empty_app.cell_manager.register_cell(
+                cell_id=None,
+                code="",
+                config=CellConfig(),
+            )
+            return empty_app'''
+
+NEW_FM = '''\
+        if app is None:
+            _template = Path("/usr/local/share/marimocad/template.py")
+            if path is None and _template.exists():
+                app = load.load_app(str(_template))
+            if app is None:
+                # Create new empty app with defaults
+                kwargs: dict[str, Any] = default.asdict()
+
+                # Add custom defaults if provided
+                if self._defaults.width is not None:
+                    kwargs["width"] = self._defaults.width
+                if self._defaults.auto_download is not None:
+                    kwargs["auto_download"] = self._defaults.auto_download
+                if self._defaults.sql_output is not None:
+                    kwargs["sql_output"] = self._defaults.sql_output
+
+                empty_app = InternalApp(App(**kwargs))
+                empty_app.cell_manager.register_cell(
+                    cell_id=None,
+                    code="",
+                    config=CellConfig(),
+                )
+                return empty_app'''
+
+
+# ── Generic patcher ────────────────────────────────────────────────────────────
+
+def _patch(target: Path, old: str, new: str, label: str) -> None:
+    source = target.read_text(encoding="utf-8")
+    if new in source:
+        print(f"{label}: already patched; nothing to do.")
         return
-    if OLD not in source:
+    if old not in source:
         print(
-            "ERROR: patch target not found in os_file_system.py — "
+            f"ERROR: patch target not found in {target.name} — "
             "marimo may have been upgraded and the file changed. "
-            "Review the new version and update patch_marimo.py.",
+            f"Review the new version and update patch_marimo.py ({label}).",
             file=sys.stderr,
         )
         sys.exit(1)
-    patched = source.replace(OLD, NEW, 1)
-    TARGET.write_text(patched, encoding="utf-8")
-    print("Patched os_file_system.py successfully.")
+    target.write_text(source.replace(old, new, 1), encoding="utf-8")
+    print(f"{label}: patched successfully.")
+
+
+def main() -> None:
+    _patch(TARGET_FS, OLD_FS, NEW_FS, "os_file_system.py")
+    _patch(TARGET_FM, OLD_FM, NEW_FM, "file_manager.py")
 
 
 if __name__ == "__main__":
