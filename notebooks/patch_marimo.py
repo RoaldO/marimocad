@@ -1,9 +1,13 @@
+"""
+Build-time patch: replaces marimo's new-notebook stub in os_file_system.py
+to load from /usr/local/share/marimocad/template.py instead of a blank app.
+Run once by the Dockerfile: RUN python3 /usr/local/share/marimocad/patch_marimo.py
+"""
 import sys
+import sysconfig
 from pathlib import Path
 
-TARGET = Path(
-    "/usr/local/lib/python3.13/site-packages/marimo/_server/files/os_file_system.py"
-)
+TARGET = Path(sysconfig.get_path("purelib")) / "marimo/_server/files/os_file_system.py"
 
 OLD = '''\
         elif file_type == "notebook" and not contents:
@@ -41,6 +45,9 @@ NEW = '''\
 
 def main() -> None:
     source = TARGET.read_text(encoding="utf-8")
+    if NEW in source:
+        print("Already patched; nothing to do.")
+        return
     if OLD not in source:
         print(
             "ERROR: patch target not found in os_file_system.py — "
