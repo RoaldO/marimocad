@@ -24,6 +24,8 @@ spec:
       labels:
         app: marimocad
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: marimocad
           image: ghcr.io/roaldo/marimocad:latest
