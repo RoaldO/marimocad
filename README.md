@@ -10,12 +10,14 @@ marimocad combines the parametric 3D modeling capabilities of [build123d](https:
 
 Unlike Jupyter, marimo notebooks are pure Python files that run as reactive scripts — every cell re-executes automatically when its dependencies change. This makes it a natural fit for parametric CAD: tweak a dimension, see the model update live.
 
-## Features (planned)
+## Features
 
 - Reactive build123d model editing in a marimo notebook
 - Live 3D preview via marimo's UI components
 - Export to STEP, STL, and other CAD formats
 - Clean, git-friendly `.py` notebook files
+- New notebooks open pre-filled with a build123d starter template (baked into
+  the image, see `docs/superpowers/specs/2026-04-27-starter-notebook-design.md`)
 
 ## Getting started
 
@@ -39,6 +41,12 @@ docker compose up
 ```
 
 Open [http://localhost:8080](http://localhost:8080) in your browser.
+
+## Deployment
+
+Also runs on the homelab Kubernetes cluster from the published image
+`ghcr.io/roaldo/marimocad:latest` (built by `.github/workflows/publish.yml`).
+See [`k8s/README.md`](k8s/README.md).
 
 ## Managing design projects
 
